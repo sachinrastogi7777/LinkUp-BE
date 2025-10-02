@@ -1,0 +1,25 @@
+{
+  "name": "linkup",
+  "version": "1.0.0",
+  "description": "This repository contains the backend codebase for LinkUp, a modern social media application designed to foster real-time connections, seamless content sharing, and vibrant community engagement.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sachinrastogi7777/LinkUp-BE.git"
+  },
+  "author": "Sachin Rastogi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sachinrastogi7777/LinkUp-BE/issues"
+  },
+  "homepage": "https://github.com/sachinrastogi7777/LinkUp-BE#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^8.18.3",
+    "nodemon": "^3.1.10"
+  }
+}
