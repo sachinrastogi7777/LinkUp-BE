@@ -52,4 +52,52 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
     }
 });
 
+requestRouter.post('/request/review/:status/:requestId', userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        const { status, requestId } = req.params;
+        const allowedStatus = ['accepted', 'rejected'];
+
+        // Validate status
+        if (!allowedStatus.includes(status)) {
+            throw new Error("Invalid status for connection request review. Allowed statuses are 'accepted' and 'rejected'.")
+        }
+
+        // Check if connection request exist and is pending for review.
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            toUserId: loggedInUser._id,
+            status: 'interested'
+        });
+        if (!connectionRequest) {
+            throw new Error("No pending connection request found to review.");
+        }
+
+        connectionRequest.status = status;
+        const updatedRequest = await connectionRequest.save();
+        res.json({ message: `Connection request has been ${status}.`, data: updatedRequest })
+    } catch (error) {
+        res.status(404).send("ERROR : " + error.message);
+    }
+});
+
+requestRouter.delete('/request/delete/:requestId', userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+
+        // Check if request exist and belongs to the logged-in user.
+        const connectionRequest = await ConnectionRequest.findOneAndDelete({
+            _id: req.params.requestId,
+            fromUserId: loggedInUser._id,
+            status: 'interested'
+        });
+        if (!connectionRequest) {
+            throw new Error("No connection request found to delete.")
+        }
+        res.json({ message: "Connection request has been deleted successfully!!!." })
+    } catch (error) {
+        res.status(404).send("ERROR : " + error.message);
+    }
+});
+
 module.exports = requestRouter;
