@@ -33,6 +33,35 @@ const validateSignupData = (data) => {
     }
 }
 
+const validateEditProfileData = (data) => {
+    const editFieldAllowed = ['firstName', 'lastName', 'dateOfBirth', 'gender', 'mobileNumber', 'interests', 'about', 'profileImage', 'coverImage', 'location'];
+    const isEditAllowed = Object.keys(data).every(field => editFieldAllowed.includes(field));
+    if (isEditAllowed) {
+        if (data.firstName && (data.firstName.length < 2 || data.firstName.length > 15)) {
+            throw new Error("First name must be between 2 and 15 characters.");
+        }
+        if (data.lastName && (data.lastName.length < 2 || data.lastName.length > 15)) {
+            throw new Error("Last name must be between 2 and 15 characters.");
+        }
+        if (data.mobileNumber && phoneNumberValidation(data.mobileNumber) === false) {
+            throw new Error("Please enter a valid mobile number.");
+        }
+        if (data.gender && genderValidation(data.gender) === false) {
+            throw new Error("Please select a valid gender.");
+        }
+        if (data.dateOfBirth && ageValidation(data.dateOfBirth) < 13) {
+            throw new Error("User must be at least 13 years old.");
+        }
+        if (data.interests && Array.isArray(data.interests) && data.interests.length > 10) {
+            throw new Error("Only up to 10 interests are allowed");
+        }
+        if (data.about && data.about.length > 200) {
+            throw new Error("Max 200 length of About is allowed.!!!")
+        }
+    }
+    return isEditAllowed;
+}
+
 const ageValidation = (dateOfBirth) => {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -71,4 +100,5 @@ module.exports = {
     passwordValidation,
     genderValidation,
     validateSignupData,
+    validateEditProfileData
 };
