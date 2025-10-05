@@ -3,8 +3,44 @@ const { validateSignupData } = require('../utils/validation');
 const User = require('../models/user');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+const uploadToCloudinary = require('../utils/helper');
 
 const authRouter = express.Router();
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed!'), false);
+        }
+    }
+});
+
+authRouter.post('/upload-image', upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No image provided" });
+        }
+        const type = req.body.type;
+        const result = await uploadToCloudinary(req.file.buffer, type);
+
+        res.json({
+            message: "Image uploaded successfully",
+            imageUrl: result.secure_url,
+            publicId: result.public_id
+        });
+    } catch (error) {
+        console.error('Upload failed:', error);
+        res.status(500).json({
+            message: "Upload failed: " + error.message,
+            error: error.http_code || 'UNKNOWN_ERROR'
+        });
+    }
+});
 
 authRouter.post("/signup", async (req, res) => {
     try {
@@ -37,8 +73,8 @@ authRouter.post("/signup", async (req, res) => {
             coverImage: req.body?.coverImage,
             about: req.body?.about
         });
-        await user.save();
-        res.send("User saved successfully...")
+        const newUserData = await user.save();
+        res.json({ message: "User saved successfully...", data: newUserData })
     } catch (error) {
         res.status(404).send(error.message);
     }
