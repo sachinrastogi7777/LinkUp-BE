@@ -69,7 +69,7 @@ authRouter.post("/signup", async (req, res) => {
             mobileNumber: req.body.mobileNumber,
             interests: req.body.interests,
             location: req.body.location,
-            profleImage: req.body?.profileImage,
+            profileImage: req.body?.profileImage,
             coverImage: req.body?.coverImage,
             about: req.body?.about
         });
