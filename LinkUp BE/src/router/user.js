@@ -6,7 +6,7 @@ const User = require('../models/user');
 const userRouter = express.Router();
 
 userRouter.get('/user/requests/received', userAuth, async (req, res) => {
-    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt']
+    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'updatedAt', 'dateOfBirth', 'gender', 'coverImage']
     try {
         const loggedInUser = req.user;
         const totalRequestReceived = await ConnectionRequest.find({
@@ -23,32 +23,32 @@ userRouter.get('/user/requests/received', userAuth, async (req, res) => {
 });
 
 userRouter.get('/user/requests/sent', userAuth, async (req, res) => {
-    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'updatedAt', 'dateOfBirth', 'gender', 'coverImage', '_id']
+    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'updatedAt', 'dateOfBirth', 'gender', 'coverImage']
     try {
         const loggedInUser = req.user;
         const totalRequestSent = await ConnectionRequest.find({
             fromUserId: loggedInUser._id,
             status: 'interested'
         }).populate('toUserId', SAFE_DATA)
-        res.json({ totalRequestSent });
+        res.json({ data: totalRequestSent });
     } catch (error) {
         res.status(500).json({ "ERROR": error.message });
     }
 });
 
-userRouter.get('/user/connections', userAuth, async (req, res) => {
-    const USER_SAFE_DATA = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'interests', 'about', 'profileImage', 'location', 'userName', 'coverImage', 'createdAt', 'updatedAt']
+userRouter.get('/user/connections/:userId', userAuth, async (req, res) => {
+    const USER_SAFE_DATA = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'interests', 'about', 'profileImage', 'location', 'userName', 'coverImage', 'createdAt', 'updatedAt'];
     try {
-        const loggedInUser = req.user;
+        const userId = req.params.userId;
         const totalConnection = await ConnectionRequest.find({
             $or: [
-                { fromUserId: loggedInUser._id, status: 'accepted' },
-                { toUserId: loggedInUser._id, status: 'accepted' }
+                { fromUserId: userId, status: 'accepted' },
+                { toUserId: userId, status: 'accepted' }
             ]
         }).populate('fromUserId', USER_SAFE_DATA).populate('toUserId', USER_SAFE_DATA);
 
         const userConnection = totalConnection.map((connection) => {
-            if (connection.fromUserId.equals(loggedInUser._id)) {
+            if (connection.fromUserId.equals(userId)) {
                 return { connectionId: connection._id, connectedAt: connection.updatedAt, user: connection.toUserId }
             } else {
                 return { connectionId: connection._id, connectedAt: connection.updatedAt, user: connection.fromUserId }
@@ -65,7 +65,7 @@ userRouter.get('/user/connections', userAuth, async (req, res) => {
 });
 
 userRouter.get('/feed', userAuth, async (req, res) => {
-    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt']
+    const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'dateOfBirth', 'gender', 'coverImage']
     try {
         const loggedInUser = req.user;
         const page = parseInt(req.query.page) || 1;
