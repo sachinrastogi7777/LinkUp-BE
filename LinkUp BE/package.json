@@ -4,7 +4,8 @@
   "description": "This repository contains the backend codebase for LinkUp, a modern social media application designed to foster real-time connections, seamless content sharing, and vibrant community engagement.",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "repository": {
     "type": "git",
@@ -21,11 +22,14 @@
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.3",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.9",
     "nodemon": "^3.1.10",
     "streamifier": "^0.1.1",
     "validator": "^13.15.15"

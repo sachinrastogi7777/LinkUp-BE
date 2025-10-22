@@ -4,7 +4,7 @@ const User = require('../models/user');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const uploadToCloudinary = require('../utils/helper');
+const { uploadToCloudinary } = require('../utils/helper');
 
 const authRouter = express.Router();
 
@@ -74,6 +74,8 @@ authRouter.post("/signup", async (req, res) => {
             about: req.body?.about
         });
         const newUserData = await user.save();
+        const token = await user.getJWT();
+        res.cookie("token", token, { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
         res.json({ message: "User saved successfully...", data: newUserData })
     } catch (error) {
         res.status(404).send(error.message);
