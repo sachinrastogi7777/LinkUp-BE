@@ -9,6 +9,7 @@ const requestRouter = require('./src/router/request');
 const userRouter = require('./src/router/user');
 const otpRouter = require('./src/router/otp');
 const app = express();
+require('./src/utils/cronJobs');
 
 app.use(express.json());
 app.use(cookieParser());

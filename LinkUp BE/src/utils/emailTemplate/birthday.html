@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        .content {
+            padding: 40px;
+            text-align: center;
+        }
+        h2 {
+            color: #a855f7;
+            margin: 10px 0;
+            font-size: 28px;
+        }
+        p {
+            color: #333;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #a855f7;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #9333ea;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+            border-radius: 0 0 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <div class="content">
+                <div style="margin: 20px 0; font-size: 60px;">🎂</div>
+                <h2 style="color: #a855f7; margin: 10px 0;">Happy Birthday, ${user.firstName}</h2>
+                <p>Wishing you a fantastic day filled with joy and happiness!</p>
+                <p>May this year bring you success and wonderful memories.</p>
+                <p>Thank you for being part of the LinkUp community! 🎉</p>
+
+                <a href="http://16.171.199.31/" class="button">Celebrate with us 🎉</a>
+            </div>
+
+            <div class="footer">
+            <p><strong>LinkUp</strong> - Connecting Professionals Worldwide</p>
+            <p>&copy; {year} LinkUp. All rights reserved.</p>
+        </div>
+        </div>
+    </div>
+</body>
+</html>
