@@ -4,7 +4,7 @@ const User = require('../models/user');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const uploadToCloudinary = require('../utils/helper');
+const { uploadToCloudinary } = require('../utils/helper');
 
 const authRouter = express.Router();
 

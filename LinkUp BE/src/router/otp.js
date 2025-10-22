@@ -5,6 +5,8 @@ const User = require('../models/user');
 const Otp = require('../models/otp');
 const bcrypt = require('bcrypt');
 const otpRouter = express.Router();
+const fs = require('fs').promises;
+const path = require('path');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -39,15 +41,18 @@ otpRouter.post('/forgot-password', async (req, res) => {
             expireAt: new Date(Date.now() + 5 * 60 * 1000) // OTP valid for 5 minutes
         });
         await otpData.save();
+
+        // Read otp.html template and inject OTP and year
+        const htmlFilePath = path.join(__dirname, '../utils/emailTemplate', 'otp.html');
+        let htmlContent = await fs.readFile(htmlFilePath, 'utf8');
+        htmlContent = htmlContent.replace('{code}', otp);
+        htmlContent = htmlContent.replace('{year}', new Date().getFullYear());
+
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
             subject: 'Password Reset OTP',
-            html: `<h2>Password Reset Request</h2>
-                <p>Your OTP for password reset is:</p>
-                <h1 style="color: #4CAF50;">${otp}</h1>
-                <p>This OTP will expire in 10 minutes.</p>
-                <p>If you didn't request this, please ignore this email.</p>`
+            html: htmlContent
         }
         await transporter.sendMail(mailOptions);
         res.json({ message: "OTP has been sent to your email." });
@@ -121,31 +126,19 @@ otpRouter.post('/resend-otp', async (req, res) => {
             expireAt: new Date(Date.now() + 5 * 60 * 1000) // OTP valid for 5 minutes
         });
         await otpData.save();
-        res.json({ message: "New OTP has been sent to your email." });
-    } catch (error) {
-        const status = error.status || 500;
-        res.status(status).json({ message: error.message });
-    }
-});
+        const htmlFilePath = path.join(__dirname, '../utils/emailTemplate', 'otp.html');
+        let htmlContent = await fs.readFile(htmlFilePath, 'utf8');
+        htmlContent = htmlContent.replace('{code}', otp);
+        htmlContent = htmlContent.replace('{year}', new Date().getFullYear());
 
-otpRouter.post('/reset-password', async (req, res) => {
-    try {
-        const { email, newPassword } = req.body;
-        if (!email || !newPassword) {
-            const err = new Error("Email and new password are required.");
-            err.status = 400;
-            throw err;
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset OTP',
+            html: htmlContent
         }
-        const user = await User.findOne({ email });
-        if (!user) {
-            const err = new Error("User not found.");
-            err.status = 404;
-            throw err;
-        }
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
-        await user.save();
-        res.json({ message: 'Password has been reset successfully.' });
+        await transporter.sendMail(mailOptions);
+        res.json({ message: "New OTP has been sent to your email." });
     } catch (error) {
         const status = error.status || 500;
         res.status(status).json({ message: error.message });

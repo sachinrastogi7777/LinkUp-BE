@@ -44,4 +44,18 @@ const uploadToCloudinary = async (buffer, type, retries = 3) => {
     }
 }
 
-module.exports = uploadToCloudinary;
+const formatted7AM = () => {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    yesterday.setHours(7, 0, 0, 0);
+    const yesterdayIsoString = yesterday.toISOString();
+
+    const today = new Date(now);
+    today.setHours(7, 0, 0, 0);
+    const todayIsoString = today.toISOString();
+
+    return { yesterdayIsoString, todayIsoString };
+}
+
+module.exports = { uploadToCloudinary, formatted7AM };

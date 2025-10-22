@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .content h2 {
+            color: #1f2937;
+            font-size: 22px;
+            margin: 0 0 15px 0;
+        }
+        .content p {
+            color: #4b5563;
+            line-height: 1.7;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+        .otp-container {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        .otp-label {
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .otp-code {
+            font-size: 42px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .timer-box {
+            display: inline-block;
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            text-align: left;
+        }
+        .timer-box p {
+            margin: 0;
+            color: #92400e;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .timer-icon {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+        .security-notice {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+            text-align: left;
+        }
+        .security-notice p {
+            margin: 0;
+            color: #991b1b;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .security-notice strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 30px 0;
+        }
+        .help-text {
+            background-color: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .help-text p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .footer {
+            background-color: #f9fafb;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="header-icon">🔐</div>
+            <h1>Verify Your Account</h1>
+        </div>
+        
+        <div class="content">
+            <h2>Your One-Time Password</h2>
+            
+            <p>Hello,</p>
+            
+            <p>We received a request to verify your account. Please use the following OTP to complete your verification:</p>
+            
+            <div class="otp-container">
+                <div class="otp-label">Your OTP Code</div>
+                <div class="otp-code">{code}</div>
+            </div>
+            
+            <div class="timer-box">
+                <p><span class="timer-icon">⏱️</span> <strong>This code will expire in 10 minutes</strong></p>
+            </div>
+            
+            <p>Enter this code in the verification screen to proceed.</p>
+            
+            <div class="security-notice">
+                <p><strong>🔒 Security Alert</strong></p>
+                <p>Never share this OTP with anyone. LinkUp team will never ask for your OTP via email, phone, or any other channel. If you didn't request this code, please ignore this email or contact our support team immediately.</p>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="help-text">
+                <p><strong>❓ Didn't request this?</strong></p>
+                <p>If you didn't attempt to verify your account, you can safely ignore this email. Your account remains secure.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>LinkUp</strong> - Connecting Professionals Worldwide</p>
+            <p>&copy; {year} LinkUp. All rights reserved.</p>
+            <p style="margin-top: 15px; font-size: 12px;">
+                This is an automated message, please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
