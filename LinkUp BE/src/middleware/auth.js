@@ -7,7 +7,7 @@ const userAuth = async (req, res, next) => {
         if (!token) {
             return res.status(401).send("Authentication failed. Please login again.");
         }
-        const decoded = JWT.verify(token, "DeVtInDeR@123");
+        const decoded = JWT.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded._id);
         if (!user) {
             throw new Error("User not found.");

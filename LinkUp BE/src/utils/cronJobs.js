@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const mongoose = require('mongoose');
 const ConnectionRequest = require('../models/connectionRequest');
 const { formatted7AM } = require('./helper');
 const nodemailer = require('nodemailer');
@@ -46,6 +47,9 @@ cron.schedule('0 7 * * *', async () => {
     } catch (error) {
         console.error('Error running cron job:', error);
     }
+}, {
+    scheduled: true,
+    timezone: "Asia/Kolkata"
 });
 
 cron.schedule('0 0 * * 1', async () => {
@@ -59,6 +63,9 @@ cron.schedule('0 0 * * 1', async () => {
     } catch (error) {
         console.error('Error running cron job:', error);
     }
+}, {
+    scheduled: true,
+    timezone: "Asia/Kolkata"
 });
 
 cron.schedule('0 6 * * *', async () => {
@@ -85,4 +92,37 @@ cron.schedule('0 6 * * *', async () => {
     } catch (error) {
         console.error('Error running cron job:', error);
     }
+}, {
+    scheduled: true,
+    timezone: "Asia/Kolkata"
 });
+
+const startOfflineUserCleanup = () => {
+    const job = cron.schedule('* * * * *', async () => {
+        try {
+            if (mongoose.connection.readyState !== 1) {
+                console.log('Database not connected, skipping cleanup');
+                return;
+            }
+
+            const thresholdTime = new Date(Date.now() - 2 * 60 * 1000);
+            const result = await User.updateMany(
+                {
+                    isOnline: true,
+                    lastSeen: { $lt: thresholdTime }
+                },
+                {
+                    $set: { isOnline: false }
+                }
+            );
+        } catch (error) {
+            console.error('✗ Error updating offline users:', error.message);
+        }
+    }, {
+        scheduled: true,
+        timezone: "Asia/Kolkata"
+    });
+    return job;
+};
+
+module.exports = { startOfflineUserCleanup };

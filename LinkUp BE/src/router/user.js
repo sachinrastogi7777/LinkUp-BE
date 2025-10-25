@@ -37,7 +37,7 @@ userRouter.get('/user/requests/sent', userAuth, async (req, res) => {
 });
 
 userRouter.get('/user/connections/:userId', userAuth, async (req, res) => {
-    const USER_SAFE_DATA = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'interests', 'about', 'profileImage', 'location', 'userName', 'coverImage', 'createdAt', 'updatedAt'];
+    const USER_SAFE_DATA = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'interests', 'about', 'profileImage', 'location', 'userName', 'coverImage', 'createdAt', 'updatedAt', 'isOnline', 'lastSeen'];
     try {
         const userId = req.params.userId;
         const totalConnection = await ConnectionRequest.find({
@@ -97,6 +97,25 @@ userRouter.get('/feed', userAuth, async (req, res) => {
     } catch (error) {
         res.status(500).json({ "ERROR": error.message });
     }
-})
+});
+
+userRouter.get('/isUserConnected/:userId', userAuth, async (req, res) => {
+    try {
+        const senderId = req.user._id;
+        const receiverId = req.params.userId;
+        const isUserConnected = await ConnectionRequest.findOne({
+            $or: [
+                { fromUserId: senderId, toUserId: receiverId, status: 'accepted' },
+                { fromUserId: receiverId, toUserId: senderId, status: 'accepted' }
+            ]
+        });
+        if (!isUserConnected) {
+            return res.status(200).json({ message: "You are not connected with this user." });
+        }
+        return res.status(200).json({ message: "You are connected with this user." });
+    } catch (error) {
+        res.status(500).json({ "ERROR": error.message });
+    }
+});
 
 module.exports = userRouter;

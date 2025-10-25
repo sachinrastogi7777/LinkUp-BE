@@ -5,6 +5,7 @@ const validator = require('validator');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const { uploadToCloudinary } = require('../utils/helper');
+const JWT = require('jsonwebtoken');
 
 const authRouter = express.Router();
 
@@ -71,7 +72,9 @@ authRouter.post("/signup", async (req, res) => {
             location: req.body.location,
             profileImage: req.body?.profileImage,
             coverImage: req.body?.coverImage,
-            about: req.body?.about
+            about: req.body?.about,
+            isOnline: true,
+            lastSeen: new Date()
         });
         const newUserData = await user.save();
         const token = await user.getJWT();
@@ -98,15 +101,79 @@ authRouter.post("/login", async (req, res) => {
         }
         const token = await user.getJWT();
         res.cookie("token", token, { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+
+        user.isOnline = true;
+        user.lastSeen = new Date();
+        await user.save();
         res.send(user);
     } catch (error) {
         res.status(404).send(error.message);
     }
 });
 
-authRouter.post('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.send("Logout successful.");
-})
+// Heartbeat endpoint - keeps user online
+authRouter.post('/heartbeat', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const decoded = JWT.verify(token, process.env.JWT_SECRET);
+        const userId = decoded._id;
+
+        await User.findByIdAndUpdate(userId, {
+            isOnline: true,
+            lastSeen: new Date()
+        });
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Heartbeat error:', error);
+        res.status(500).json({ error: 'Failed to update status' });
+    }
+});
+
+// Offline endpoint - called when page closes
+authRouter.post('/offline', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            // Don't return error, just silently fail for beacon requests
+            return res.status(200).json({ success: false });
+        }
+
+        const decoded = JWT.verify(token, process.env.JWT_SECRET);
+        const userId = decoded._id;
+
+        await User.findByIdAndUpdate(userId, {
+            isOnline: false,
+            lastSeen: new Date()
+        });
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Offline status error:', error);
+        // Return 200 even on error to prevent browser retries
+        res.status(200).json({ success: false });
+    }
+});
+
+authRouter.post('/logout', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (token) {
+            const decoded = JWT.verify(token, process.env.JWT_SECRET);
+            const userId = decoded._id;
+            await User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
+        }
+        res.clearCookie('token');
+        res.status(200).json({ message: "Logout successful." });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.clearCookie('token');
+        res.status(200).json({ message: "Logout successful." });
+    }
+});
 
 module.exports = authRouter;

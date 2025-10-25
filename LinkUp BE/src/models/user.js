@@ -64,11 +64,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=300&fit=crop'
     },
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now
+    }
 }, { timestamps: true });
 
 userSchema.methods.getJWT = async function () {
     const user = this;
-    const token = JWT.sign({ _id: user._id }, "DeVtInDeR@123", { expiresIn: '7d' });
+    const token = JWT.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     return token;
 }
 
