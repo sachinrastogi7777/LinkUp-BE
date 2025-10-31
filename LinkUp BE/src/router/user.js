@@ -118,4 +118,20 @@ userRouter.get('/isUserConnected/:userId', userAuth, async (req, res) => {
     }
 });
 
+userRouter.delete('/removeConnection/:connectionId', userAuth, async (req, res) => {
+    try {
+        const connectionId = req.params.connectionId;
+        const connectionRequest = await ConnectionRequest.findOneAndDelete({
+            _id: connectionId,
+            status: 'accepted'
+        });
+        if (!connectionRequest) {
+            throw new Error("No connection found to delete.")
+        }
+        res.json({ message: "Connection has been deleted successfully!!!." })
+    } catch (error) {
+        res.status(500).json({ "Error while removing connection ": error.message })
+    }
+})
+
 module.exports = userRouter;
