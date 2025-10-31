@@ -175,6 +175,7 @@ const initializeSocket = (server) => {
                 const receiverSocketId = userSockets.get(receiverId);
                 const isReceiverOnline = !!receiverSocketId;
 
+                // CHECK PROPERLY IF RECEIVER IS IN THIS SPECIFIC CHAT ROOM
                 let isReceiverInChat = false;
                 if (isReceiverOnline) {
                     for (const [socketId, chatInfo] of activeChats.entries()) {
@@ -196,6 +197,8 @@ const initializeSocket = (server) => {
                 } else if (isReceiverOnline) {
                     initialStatus = 'delivered';
                     deliveredAt = new Date();
+                } else {
+                    initialStatus = 'sent';
                 }
 
                 const newMessage = {
