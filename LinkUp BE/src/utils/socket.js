@@ -158,7 +158,7 @@ const initializeSocket = (server) => {
         });
 
         // SEND MESSAGE
-        socket.on('sendMessage', async ({ senderId, senderName, receiverId, receiverName, text, timeStamp }) => {
+        socket.on('sendMessage', async ({ senderId, senderName, receiverId, receiverName, text, imageUrl, messageType, timeStamp }) => {
             try {
                 const roomId = getSecretRoomId(senderId, receiverId);
                 let chat = await Chat.findOne({
@@ -177,7 +177,6 @@ const initializeSocket = (server) => {
 
                 let isReceiverInChat = false;
                 if (isReceiverOnline) {
-                    // Check if receiver is viewing THIS specific chat
                     for (const [socketId, chatInfo] of activeChats.entries()) {
                         if (chatInfo.userId === receiverId && chatInfo.currentChatRoom === roomId) {
                             isReceiverInChat = true;
@@ -201,7 +200,9 @@ const initializeSocket = (server) => {
 
                 const newMessage = {
                     senderId,
-                    text,
+                    text: text || '',
+                    messageType: messageType || 'text',
+                    imageUrl: imageUrl || null,
                     status: initialStatus,
                     deliveredAt: deliveredAt,
                     seenAt: seenAt
@@ -218,7 +219,9 @@ const initializeSocket = (server) => {
                     senderName,
                     receiverId,
                     receiverName,
-                    text,
+                    text: savedMessage.text,
+                    messageType: savedMessage.messageType,
+                    imageUrl: savedMessage.imageUrl,
                     timeStamp,
                     createdAt: savedMessage.createdAt,
                     status: savedMessage.status,

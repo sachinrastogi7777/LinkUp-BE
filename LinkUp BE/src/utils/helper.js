@@ -8,9 +8,13 @@ const uploadToCloudinary = async (buffer, type, retries = 3) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         resource_type: 'image',
-                        folder: `profile_images/${type}`,
-                        timeout: 60000, // 60 seconds timeout
-                        transformation: [
+                        folder: type === 'chat' ? 'chat_images' : `profile_images/${type}`,
+                        timeout: 60000,
+                        transformation: type === 'chat' ? [
+                            { width: 800, height: 800, crop: 'limit' },
+                            { quality: 'auto:good' },
+                            { fetch_format: 'auto' }
+                        ] : [
                             {
                                 width: type === 'profile' ? 400 : 1200,
                                 height: type === 'profile' ? 400 : 400,
@@ -32,11 +36,11 @@ const uploadToCloudinary = async (buffer, type, retries = 3) => {
                 streamifier.createReadStream(buffer).pipe(uploadStream);
             });
 
-            return result; // Success, return result
+            return result;
         } catch (error) {
             console.log(`Upload attempt ${i + 1} failed:`, error.message);
             if (i === retries - 1) {
-                throw error; // Last attempt failed
+                throw error;
             }
             // Wait before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
