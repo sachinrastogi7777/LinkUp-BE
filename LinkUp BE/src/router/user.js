@@ -2,6 +2,8 @@ const express = require('express');
 const userAuth = require('../middleware/auth');
 const ConnectionRequest = require('../models/connectionRequest');
 const User = require('../models/user');
+const { connection } = require('mongoose');
+const { Chat } = require('../models/chat');
 
 const userRouter = express.Router();
 
@@ -47,18 +49,30 @@ userRouter.get('/user/connections/:userId', userAuth, async (req, res) => {
             ]
         }).populate('fromUserId', USER_SAFE_DATA).populate('toUserId', USER_SAFE_DATA);
 
-        const userConnection = totalConnection.map((connection) => {
-            if (connection.fromUserId.equals(userId)) {
-                return { connectionId: connection._id, connectedAt: connection.updatedAt, user: connection.toUserId }
-            } else {
-                return { connectionId: connection._id, connectedAt: connection.updatedAt, user: connection.fromUserId }
-            }
-        });
-        if (userConnection.length == 0) {
+        const userConnectionWithUnreadMessages = await Promise.all(totalConnection.map(async (connection) => {
+            const partnerId = connection.fromUserId._id.equals(userId) ? connection.toUserId._id : connection.fromUserId._id;
+            const partnerUserData = connection.fromUserId._id.equals(userId) ? connection.toUserId : connection.fromUserId;
+
+            // Count unread messages from Chat model
+            const chat = await Chat.findOne({
+                participants: { $all: [userId, partnerId] }
+            });
+
+            const unreadMessageCount = chat?.unreadCount?.get(userId.toString()) || 0;
+
+            return {
+                connectionId: connection._id,
+                connectedAt: connection.updatedAt,
+                user: partnerUserData,
+                unreadCount: unreadMessageCount
+            };
+        }));
+
+        if (userConnectionWithUnreadMessages.length == 0) {
             res.json({ message: "You Don't have any Connection." })
             return
         }
-        res.json({ userConnection });
+        res.json({ userConnection: userConnectionWithUnreadMessages });
     } catch (error) {
         res.status(500).json({ "ERROR": error.message });
     }

@@ -4,7 +4,8 @@ const messageSchema = new mongoose.Schema({
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
     text: {
         type: String,
@@ -22,7 +23,8 @@ const messageSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['sent', 'delivered', 'seen'],
-        default: 'sent'
+        default: 'sent',
+        index: true
     },
     deliveredAt: {
         type: Date,
@@ -34,14 +36,27 @@ const messageSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+messageSchema.index({ senderId: 1, createdAt: -1 });
+messageSchema.index({ status: 1, createdAt: -1 });
+
 const chatSchema = new mongoose.Schema({
     participants: {
         type: [mongoose.Schema.Types.ObjectId],
         ref: 'User',
         required: true
     },
-    messages: [messageSchema]
-});
+    messages: [messageSchema],
+    unreadCount: {
+        type: Map,
+        of: Number,
+        default: {}
+    }
+}, { timestamps: true });
+
+chatSchema.index({ participants: 1 });
+chatSchema.index({ 'participants.0': 1, 'participants.1': 1 });
+chatSchema.index({ updatedAt: -1 });
+chatSchema.index({ participants: 1, updatedAt: -1 });
 
 const Chat = mongoose.model('Chat', chatSchema);
 

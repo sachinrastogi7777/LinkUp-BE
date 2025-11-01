@@ -7,8 +7,8 @@ const getSecretRoomId = (loggedInUserId, userId) => {
     return crypto.createHash('sha256').update([loggedInUserId, userId].sort().join('_')).digest('hex');
 }
 
-const userSockets = new Map(); // userId -> socketId
-const activeChats = new Map(); // socketId -> { userId, currentChatRoom, chatPartnerId }
+const userSockets = new Map();
+const activeChats = new Map();
 
 let io;
 
@@ -36,6 +36,7 @@ const initializeSocket = (server) => {
                     isOnline: true,
                     lastSeen: new Date()
                 });
+
                 const chats = await Chat.find({
                     participants: userId
                 });
@@ -45,7 +46,6 @@ const initializeSocket = (server) => {
                     const senderUpdates = {};
 
                     chat.messages.forEach(msg => {
-                        // Update messages sent TO this user that are still 'sent'
                         if (msg.senderId.toString() !== userId && msg.status === 'sent') {
                             msg.status = 'delivered';
                             msg.deliveredAt = new Date();
@@ -77,12 +77,24 @@ const initializeSocket = (server) => {
                         });
                     }
                 }
+
+                // Send unread counts to user after they come online
+                const unreadCounts = {};
+                for (const chat of chats) {
+                    const unreadCount = chat.unreadCount?.get(userId) || 0;
+                    if (unreadCount > 0) {
+                        const partnerId = chat.participants.find(p => p.toString() !== userId).toString();
+                        unreadCounts[partnerId] = unreadCount;
+                    }
+                }
+
+                socket.emit('unread-counts', { unreadCounts });
+
             } catch (error) {
                 console.error('❌ Error setting user online:', error);
             }
         });
 
-        // USER GOES OFFLINE
         socket.on('user-offline', async ({ userId }) => {
             try {
                 await User.findByIdAndUpdate(userId, {
@@ -102,19 +114,16 @@ const initializeSocket = (server) => {
             }
         });
 
-        // JOIN CHAT
         socket.on('joinChat', async ({ loggedInUserId, userId }) => {
             const roomId = getSecretRoomId(loggedInUserId, userId);
             socket.join(roomId);
 
-            // Track active chat
             activeChats.set(socket.id, {
                 userId: loggedInUserId,
                 currentChatRoom: roomId,
                 chatPartnerId: userId
             });
 
-            // Mark messages from partner as seen
             try {
                 const chat = await Chat.findOne({
                     participants: { $all: [loggedInUserId, userId] }
@@ -126,7 +135,6 @@ const initializeSocket = (server) => {
                     const messageIds = [];
 
                     chat.messages.forEach(msg => {
-                        // Mark messages sent BY partner as seen
                         if (msg.senderId.toString() === userId && msg.status !== 'seen') {
                             msg.status = 'seen';
                             msg.seenAt = now;
@@ -135,10 +143,18 @@ const initializeSocket = (server) => {
                         }
                     });
 
+                    // Reset unread count for this user
+                    if (chat.unreadCount?.get(loggedInUserId) > 0) {
+                        chat.unreadCount.set(loggedInUserId, 0);
+                        updated = true;
+
+                        // Notify the user that unread count is reset
+                        // socket.emit('unread-count-reset', { partnerId: userId });
+                    }
+
                     if (updated) {
                         await chat.save();
 
-                        // Notify the entire room
                         io.to(roomId).emit('messages-seen', {
                             messageIds: messageIds,
                             seenAt: now
@@ -150,14 +166,12 @@ const initializeSocket = (server) => {
             }
         });
 
-        // LEAVE CHAT
         socket.on('leaveChat', async ({ loggedInUserId, userId }) => {
             const roomId = getSecretRoomId(loggedInUserId, userId);
             socket.leave(roomId);
             activeChats.delete(socket.id);
         });
 
-        // SEND MESSAGE
         socket.on('sendMessage', async ({ senderId, senderName, receiverId, receiverName, text, imageUrl, messageType, timeStamp }) => {
             try {
                 const roomId = getSecretRoomId(senderId, receiverId);
@@ -167,15 +181,14 @@ const initializeSocket = (server) => {
                 if (!chat) {
                     chat = new Chat({
                         participants: [senderId, receiverId],
-                        messages: []
+                        messages: [],
+                        unreadCount: new Map()
                     });
                 }
 
-                // Determine initial status
                 const receiverSocketId = userSockets.get(receiverId);
                 const isReceiverOnline = !!receiverSocketId;
 
-                // CHECK PROPERLY IF RECEIVER IS IN THIS SPECIFIC CHAT ROOM
                 let isReceiverInChat = false;
                 if (isReceiverOnline) {
                     for (const [socketId, chatInfo] of activeChats.entries()) {
@@ -197,8 +210,16 @@ const initializeSocket = (server) => {
                 } else if (isReceiverOnline) {
                     initialStatus = 'delivered';
                     deliveredAt = new Date();
+
+                    // Increment unread count for receiver
+                    const currentUnread = chat.unreadCount?.get(receiverId) || 0;
+                    chat.unreadCount.set(receiverId, currentUnread + 1);
                 } else {
                     initialStatus = 'sent';
+
+                    // Increment unread count for receiver (will be delivered when they come online)
+                    const currentUnread = chat.unreadCount?.get(receiverId) || 0;
+                    chat.unreadCount.set(receiverId, currentUnread + 1);
                 }
 
                 const newMessage = {
@@ -234,13 +255,21 @@ const initializeSocket = (server) => {
 
                 io.to(roomId).emit('receiveMessage', messageData);
 
+                // Send unread count update to receiver if they're online but not in chat
+                if (isReceiverOnline && !isReceiverInChat) {
+                    const unreadCount = chat.unreadCount?.get(receiverId) || 0;
+                    io.to(receiverSocketId).emit('unread-count-update', {
+                        partnerId: senderId,
+                        unreadCount
+                    });
+                }
+
             } catch (error) {
                 console.error("❌ Error sending message:", error);
                 socket.emit('message-error', { error: error.message });
             }
         });
 
-        // DISCONNECT
         socket.on('disconnect', async () => {
             activeChats.delete(socket.id);
             if (socket.userId) {
@@ -261,7 +290,6 @@ const initializeSocket = (server) => {
             }
         });
 
-        // Typing Indicator
         socket.on('typing', ({ senderId, receiverId, senderName }) => {
             const roomId = getSecretRoomId(senderId, receiverId);
             socket.to(roomId).emit('user-typing', {
