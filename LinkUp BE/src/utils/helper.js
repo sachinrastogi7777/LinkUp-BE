@@ -108,10 +108,10 @@ const generateConnectionRequestEmail = (htmlTemplate, requests) => {
     let viewMoreSection = '';
     if (totalRequests > 5) {
         const remainingCount = totalRequests - 5;
-        const baseUrl = process.env.FRONTEND_URL || 'http://16.16.115.34';
+        const appUrl = process.env.APP_URL;
         viewMoreSection = `
         <div class="view-more">
-            <a href="${baseUrl}/requests" class="view-more-link">
+            <a href="${appUrl}/requests" class="view-more-link">
                 + ${remainingCount} more request${remainingCount > 1 ? 's' : ''} waiting for your review
             </a>
         </div>`;
