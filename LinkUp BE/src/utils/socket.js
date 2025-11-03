@@ -147,9 +147,6 @@ const initializeSocket = (server) => {
                     if (chat.unreadCount?.get(loggedInUserId) > 0) {
                         chat.unreadCount.set(loggedInUserId, 0);
                         updated = true;
-
-                        // Notify the user that unread count is reset
-                        // socket.emit('unread-count-reset', { partnerId: userId });
                     }
 
                     if (updated) {
@@ -159,6 +156,38 @@ const initializeSocket = (server) => {
                             messageIds: messageIds,
                             seenAt: now
                         });
+
+                        const senderSocketId = userSockets.get(userId); // The person who sent the messages
+                        const receiverSocketId = userSockets.get(loggedInUserId); // The person viewing
+
+                        const lastMessage = chat.messages[chat.messages.length - 1];
+                        const messageData = {
+                            messageId: lastMessage._id.toString(),
+                            senderId: lastMessage.senderId.toString(),
+                            text: lastMessage.text,
+                            messageType: lastMessage.messageType,
+                            imageUrl: lastMessage.imageUrl,
+                            createdAt: lastMessage.createdAt,
+                            status: lastMessage.status,
+                            deliveredAt: lastMessage.deliveredAt,
+                            seenAt: lastMessage.seenAt
+                        };
+
+                        // Notify sender (their sent messages were seen)
+                        if (senderSocketId) {
+                            io.to(senderSocketId).emit('chat-list-update', {
+                                partnerId: loggedInUserId,
+                                lastMessage: messageData
+                            });
+                        }
+
+                        // Notify receiver (their chat list should update)
+                        if (receiverSocketId) {
+                            io.to(receiverSocketId).emit('chat-list-update', {
+                                partnerId: userId,
+                                lastMessage: messageData
+                            });
+                        }
                     }
                 }
             } catch (error) {
@@ -254,6 +283,22 @@ const initializeSocket = (server) => {
                 };
 
                 io.to(roomId).emit('receiveMessage', messageData);
+
+                const senderSocketId = userSockets.get(senderId);
+
+                if (senderSocketId) {
+                    io.to(senderSocketId).emit('chat-list-update', {
+                        partnerId: receiverId,
+                        lastMessage: messageData
+                    });
+                }
+
+                if (receiverSocketId) {
+                    io.to(receiverSocketId).emit('chat-list-update', {
+                        partnerId: senderId,
+                        lastMessage: messageData
+                    });
+                }
 
                 // Send unread count update to receiver if they're online but not in chat
                 if (isReceiverOnline && !isReceiverInChat) {

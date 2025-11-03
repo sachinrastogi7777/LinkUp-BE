@@ -70,6 +70,86 @@
             color: #374151;
             font-size: 14px;
         }
+        .requests-container {
+            margin: 30px 0;
+        }
+        .request-card {
+            display: table;
+            width: 100%;
+            background-color: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: box-shadow 0.2s;
+        }
+        .request-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .request-content {
+            display: table-cell;
+            vertical-align: middle;
+        }
+        .request-image {
+            display: table-cell;
+            vertical-align: middle;
+            width: 60px;
+            padding-right: 15px;
+        }
+        .request-image img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #667eea;
+        }
+        .request-info {
+            display: table-cell;
+            vertical-align: middle;
+            width: 100%;
+        }
+        .request-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+        .request-detail {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0;
+        }
+        .request-button {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            padding-left: 15px;
+            white-space: nowrap;
+        }
+        .review-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 18px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .review-btn:hover {
+            transform: translateY(-1px);
+        }
+        .view-more {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .view-more-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
         .cta-button {
             display: inline-block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -128,31 +208,33 @@
             <div class="header-icon">🤝</div>
             <h1>New Connection Requests</h1>
         </div>
-        
+
         <div class="content">
             <span class="notification-badge">⏰ Action Required</span>
-            
-            <h2>You have pending connection requests!</h2>
-            
+
+            <h2>You have {totalRequests} pending connection request{plural}!</h2>
+
             <p>Hello,</p>
-            
+
             <p>You've received new connection requests since yesterday that are waiting for your review.</p>
-            
+            <div class="requests-container">
+                {requestCards}
+            </div>
+            {viewMoreSection}
+
             <div class="highlight-box">
                 <p><strong>💡 Quick Tip:</strong> Responding promptly to connection requests helps you build a stronger professional network and increases your visibility on the platform.</p>
             </div>
-            
-            <p>Review the profiles of those who want to connect with you and decide whether to accept or decline their requests.</p>
-            
+
             <div class="button-container">
-                <a href="http://16.16.115.34/" class="cta-button">Review Pending Requests →</a>
+                <a href="http://16.16.115.34/requests" class="cta-button">View All Requests →</a>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <p style="font-size: 13px; color: #6b7280;">If you're not interested in these notifications, you can adjust your email preferences in your account settings.</p>
         </div>
-        
+
         <div class="footer">
             <p><strong>LinkUp</strong> - Connecting Professionals Worldwide</p>
             <p>&copy; {year} LinkUp. All rights reserved.</p>

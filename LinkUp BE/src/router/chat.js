@@ -49,6 +49,52 @@ chatRouter.get('/chat/:userId', userAuth, async (req, res) => {
         console.error("Error fetching chat:", error);
         res.status(500).json({ message: "Internal server error" });
     }
-})
+});
+
+chatRouter.get('/chats', userAuth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Find chats where the logged-in user is a participant, sort by recent activity
+        const chats = await Chat.find({ participants: userId })
+            .sort({ updatedAt: -1 })
+            .populate({
+                path: 'participants',
+                select: 'firstName lastName profileImage isOnline lastSeen'
+            })
+            .populate({
+                path: 'messages.senderId',
+                select: 'firstName lastName profileImage'
+            });
+
+        const result = chats.map(chat => {
+            const others = (chat.participants || []).filter(p => String(p._id) !== String(userId));
+            const lastMessage = (chat.messages && chat.messages.length) ? chat.messages[chat.messages.length - 1] : null;
+
+            let unread = 0;
+            if (chat.unreadCount) {
+                if (typeof chat.unreadCount.get === 'function') {
+                    unread = chat.unreadCount.get(String(userId)) || 0;
+                } else {
+                    unread = chat.unreadCount[String(userId)] || chat.unreadCount[userId] || 0;
+                }
+            }
+
+            return {
+                chatId: chat._id,
+                participants: others,
+                lastMessage,
+                unreadCount: unread,
+                updatedAt: chat.updatedAt,
+                createdAt: chat.createdAt
+            };
+        });
+
+        res.status(200).json({ chats: result });
+    } catch (error) {
+        console.error('Error fetching user chats:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 module.exports = chatRouter;
