@@ -1,13 +1,13 @@
 const cron = require('node-cron');
 const mongoose = require('mongoose');
 const ConnectionRequest = require('../models/connectionRequest');
-const { formatted7AM, generateConnectionRequestEmail, fetchPendingRequests, categorizeRequestsByEmail, sortRequests, generateEmailSubject } = require('./helper');
+const { formatted7AM, generateConnectionRequestEmail, fetchPendingRequests, categorizeRequestsByEmail, sortRequests, generateEmailSubject, updateNotificationTracking } = require('./helper');
 const nodemailer = require('nodemailer');
 const User = require('../models/user');
 const fs = require('fs').promises;
 const path = require('path');
 
-const { yesterdayIsoString, todayIsoString } = formatted7AM();
+const { yesterdayIsoString } = formatted7AM();
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -57,14 +57,21 @@ cron.schedule('0 7 * * *', async () => {
                 };
 
                 await transporter.sendMail(mailOptions);
+
+                // Update notification tracking for all requests sent in this email
+                const requestIds = all.map(req => req._id);
+                await updateNotificationTracking(requestIds);
             } catch (emailError) {
                 console.error(`❌ Failed to send email to ${email}:`, emailError.message);
             }
         }
     } catch (error) {
-        console.error('Error running cron job:', error);
+        console.error('❌ Error running cron job:', error);
     }
-})
+}, {
+    scheduled: true,
+    timezone: "Asia/Kolkata"
+});
 
 cron.schedule('0 0 * * 1', async () => {
     try {

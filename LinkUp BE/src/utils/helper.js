@@ -127,6 +127,10 @@ const fetchPendingRequests = async () => {
     }).populate('fromUserId toUserId');
 };
 
+/**
+ * 1. New requests (created yesterday after 7 AM): Send notification once (next day)
+ * 2. Old requests (3+ days old): Send notification every 3 days
+ */
 const categorizeRequestsByEmail = (allRequests, yesterdayIsoString, todayIsoString) => {
     const now = Date.now();
     const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
@@ -137,9 +141,11 @@ const categorizeRequestsByEmail = (allRequests, yesterdayIsoString, todayIsoStri
         const email = req.toUserId.email;
         const createdAt = new Date(req.createdAt);
         const requestAge = now - createdAt.getTime();
+        const lastNotified = req.lastNotificationSent ? new Date(req.lastNotificationSent) : null;
+        const timeSinceLastNotification = lastNotified ? now - lastNotified.getTime() : Infinity;
 
-        const isNewRequest = createdAt > new Date(yesterdayIsoString) && createdAt <= new Date(todayIsoString);
-        const isOldRequest = requestAge > threeDaysInMs;
+        const isNewRequest = createdAt > new Date(yesterdayIsoString) && createdAt <= new Date(todayIsoString) && !lastNotified;
+        const isOldRequest = requestAge >= threeDaysInMs && (!lastNotified || timeSinceLastNotification >= threeDaysInMs);
 
         if (isNewRequest || isOldRequest) {
             if (!requestByEmail[email]) {
@@ -194,6 +200,21 @@ const generateEmailSubject = (stats) => {
     }
 };
 
+const updateNotificationTracking = async (requestIds) => {
+    try {
+        await ConnectionRequest.updateMany(
+            { _id: { $in: requestIds } },
+            {
+                $set: { lastNotificationSent: new Date() },
+                $inc: { notificationCount: 1 }
+            }
+        );
+    } catch (error) {
+        console.error('Error updating notification tracking:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     uploadToCloudinary,
     formatted7AM,
@@ -202,4 +223,5 @@ module.exports = {
     categorizeRequestsByEmail,
     sortRequests,
     generateEmailSubject,
+    updateNotificationTracking,
 };
