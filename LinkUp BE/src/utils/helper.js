@@ -81,7 +81,7 @@ const generateConnectionRequestEmail = (htmlTemplate, requests) => {
         const fullName = `${fromUser.firstName} ${fromUser.lastName}`;
         const profileImage = fromUser.profileImage || 'https://via.placeholder.com/50';
         const about = fromUser.about ? fromUser.about.split(' ').slice(0, 10).join(' ') + '...' : '';
-        const baseUrl = process.env.FRONTEND_URL || 'http://16.16.115.34';
+        const baseUrl = process.env.APP_URL;
 
         // Check if request is from yesterday (new)
         const requestAge = now - new Date(req.createdAt).getTime();
