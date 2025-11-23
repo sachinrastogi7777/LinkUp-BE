@@ -129,11 +129,11 @@ const fetchPendingRequests = async () => {
 
 /**
  * 1. New requests (created yesterday after 7 AM): Send notification once (next day)
- * 2. Old requests (3+ days old): Send notification every 3 days
+ * 2. Old requests (7+ days old): Send notification every 7 days
  */
 const categorizeRequestsByEmail = (allRequests, yesterdayIsoString, todayIsoString) => {
     const now = Date.now();
-    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
     const requestByEmail = {};
     const emailStats = {};
 
@@ -145,7 +145,7 @@ const categorizeRequestsByEmail = (allRequests, yesterdayIsoString, todayIsoStri
         const timeSinceLastNotification = lastNotified ? now - lastNotified.getTime() : Infinity;
 
         const isNewRequest = createdAt > new Date(yesterdayIsoString) && createdAt <= new Date(todayIsoString) && !lastNotified;
-        const isOldRequest = requestAge >= threeDaysInMs && (!lastNotified || timeSinceLastNotification >= threeDaysInMs);
+        const isOldRequest = requestAge >= sevenDaysInMs && (!lastNotified || timeSinceLastNotification >= sevenDaysInMs);
 
         if (isNewRequest || isOldRequest) {
             if (!requestByEmail[email]) {

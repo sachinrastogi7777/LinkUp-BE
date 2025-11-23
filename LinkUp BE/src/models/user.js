@@ -22,8 +22,10 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        minLength: 8,
+        required: function () {
+            return !this.googleId && !this.facebookId;
+        },
+        minLength: 6,
     },
     userName: {
         type: String,
@@ -35,7 +37,6 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        required: true,
         enum: {
             values: ['Male', 'Female', 'Other'],
             message: '{VALUE} is not a valid Gender'
@@ -44,6 +45,7 @@ const userSchema = new mongoose.Schema({
     mobileNumber: {
         type: Number,
         unique: true,
+        sparse: true,
     },
     interests: {
         type: Array,
@@ -58,7 +60,6 @@ const userSchema = new mongoose.Schema({
     },
     location: {
         type: String,
-        required: true,
     },
     coverImage: {
         type: String,
@@ -71,6 +72,16 @@ const userSchema = new mongoose.Schema({
     lastSeen: {
         type: Date,
         default: Date.now
+    },
+    googleId: {
+        type: String,
+        sparse: true,
+        unique: true,
+    },
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     }
 }, { timestamps: true });
 
@@ -82,7 +93,7 @@ userSchema.methods.getJWT = async function () {
 
 userSchema.methods.validatePassword = async function (passwordInputByUser) {
     const user = this;
-    const passwordHash = user.password
+    const passwordHash = user.password;
     const isPasswordValid = await bcrypt.compare(passwordInputByUser, passwordHash);
     return isPasswordValid;
 }

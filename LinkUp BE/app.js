@@ -13,6 +13,7 @@ const userRouter = require('./src/router/user');
 const otpRouter = require('./src/router/otp');
 const chatRouter = require('./src/router/chat');
 const { startOfflineUserCleanup } = require('./src/utils/cronJobs');
+const passport = require('passport');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true
 }));
+app.use(passport.initialize());
 
 app.use('/', authRouter);
 app.use('/', profileRouter);

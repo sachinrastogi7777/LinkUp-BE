@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const { uploadToCloudinary } = require('../utils/helper');
 const JWT = require('jsonwebtoken');
+const passport = require('../config/passport');
 
 const authRouter = express.Router();
 
@@ -73,17 +74,23 @@ authRouter.post("/signup", async (req, res) => {
             profileImage: req.body?.profileImage,
             coverImage: req.body?.coverImage,
             about: req.body?.about,
+            authProvider: 'local',
             isOnline: true,
             lastSeen: new Date()
         });
         const newUserData = await user.save();
         const token = await user.getJWT();
-        res.cookie("token", token, { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+        });
         res.json({ message: "User saved successfully...", data: newUserData })
     } catch (error) {
         res.status(404).send(error.message);
     }
-})
+});
 
 authRouter.post("/login", async (req, res) => {
     const { email, password } = req.body;
@@ -95,12 +102,20 @@ authRouter.post("/login", async (req, res) => {
         if (!user) {
             throw new Error("User not found.");
         }
+        if (user.authProvider !== 'local') {
+            throw new Error(`This account uses ${user.authProvider} login. Please use ${user.authProvider} to sign in.`);
+        }
         const isPasswordValid = await user.validatePassword(password);
         if (!isPasswordValid) {
             throw new Error("Please enter correct password.");
         }
         const token = await user.getJWT();
-        res.cookie("token", token, { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+        });
 
         user.isOnline = true;
         user.lastSeen = new Date();
@@ -110,6 +125,46 @@ authRouter.post("/login", async (req, res) => {
         res.status(404).send(error.message);
     }
 });
+
+authRouter.get('/auth/google',
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        session: false
+    })
+);
+
+authRouter.get('/auth/google/callback',
+    (req, res, next) => {
+        next();
+    },
+    passport.authenticate('google', {
+        session: false,
+        failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed`
+    }),
+    async (req, res) => {
+        try {
+            if (!req.user) {
+                throw new Error('No user returned from authentication');
+            }
+            const { user, isNewUser } = req.user;
+            const token = await user.getJWT();
+            res.cookie("token", token, {
+                expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax'
+            });
+
+            const redirectUrl = isNewUser
+                ? `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true&newUser=true`
+                : `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true&newUser=false`;
+
+            res.redirect(redirectUrl);
+        } catch (error) {
+            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=token_generation_failed`);
+        }
+    }
+);
 
 // Heartbeat endpoint - keeps user online
 authRouter.post('/heartbeat', async (req, res) => {
