@@ -7,6 +7,33 @@ const { Chat } = require('../models/chat');
 
 const userRouter = express.Router();
 
+const optionalAuth = async (req, res, next) => {
+    try {
+        const JWT = require('jsonwebtoken');
+        const User = require('../models/user');
+        
+        const token = req.cookies?.token;
+        if (!token) {
+            req.user = null;
+            return next();
+        }
+        
+        const decoded = JWT.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded._id);
+        
+        if (!user) {
+            req.user = null;
+            return next();
+        }
+        
+        req.user = user;
+        next();
+    } catch (error) {
+        req.user = null;
+        next();
+    }
+};
+
 userRouter.get('/user/requests/received', userAuth, async (req, res) => {
     const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'updatedAt', 'dateOfBirth', 'gender', 'coverImage']
     try {
@@ -78,35 +105,43 @@ userRouter.get('/user/connections/:userId', userAuth, async (req, res) => {
     }
 });
 
-userRouter.get('/feed', userAuth, async (req, res) => {
+userRouter.get('/feed', optionalAuth, async (req, res) => {
     const SAFE_DATA = ['firstName', 'lastName', 'interests', 'about', 'profileImage', 'location', 'userName', 'createdAt', 'dateOfBirth', 'gender', 'coverImage']
     try {
-        const loggedInUser = req.user;
         const page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 10;
         limit = limit > 25 ? 25 : limit;
         const skip = (page - 1) * limit;
 
-        // Find all connection requests (Sent + Recieved)
-        const connectionRequest = await ConnectionRequest.find({
-            $or: [
-                { fromUserId: loggedInUser._id },
-                { toUserId: loggedInUser._id }
-            ]
-        }).select(['fromUserId', 'toUserId']);
+        let hideUserFromFeed = new Set();
 
-        const hideUserFromFeed = new Set();
-        connectionRequest.map((connection) => {
-            hideUserFromFeed.add(connection.fromUserId.toString());
-            hideUserFromFeed.add(connection.toUserId.toString());
-        });
+        if (req.user) {
+            const connectionRequest = await ConnectionRequest.find({
+                $or: [
+                    { fromUserId: req.user._id },
+                    { toUserId: req.user._id }
+                ]
+            }).select(['fromUserId', 'toUserId']);
 
-        const userToShowOnFeed = await User.find({
-            $and: [
-                { _id: { $nin: Array.from(hideUserFromFeed) } },
-                { _id: { $ne: loggedInUser._id } }
-            ]
-        }).select(SAFE_DATA).skip(skip).limit(limit);
+            connectionRequest.map((connection) => {
+                hideUserFromFeed.add(connection.fromUserId.toString());
+                hideUserFromFeed.add(connection.toUserId.toString());
+            });
+        }
+
+        const query = {
+            _id: { $nin: Array.from(hideUserFromFeed) }
+        };
+
+        if (req.user) {
+            query._id.$ne = req.user._id;
+        }
+
+        const userToShowOnFeed = await User.find(query)
+            .select(SAFE_DATA)
+            .skip(skip)
+            .limit(limit);
+
         res.json({ data: userToShowOnFeed })
     } catch (error) {
         res.status(500).json({ "ERROR": error.message });
