@@ -21,15 +21,12 @@ const app = express();
 app.set('trust proxy', 1);
 
 const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    'http://localhost:5173',
-    'https://linkup-app.duckdns.org'
-].filter(Boolean);
+    process.env.FRONTEND_URL
+];
 
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
