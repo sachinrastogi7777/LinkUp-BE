@@ -15,7 +15,6 @@ const chatRouter = require('./src/router/chat');
 const { startOfflineUserCleanup } = require('./src/utils/cronJobs');
 const passport = require('./src/config/passport');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
 
 const app = express();
 
@@ -43,33 +42,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Use MongoDB for session storage in production
-const sessionConfig = {
+app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
-};
-
-// Add MongoStore in production
-if (process.env.NODE_ENV === 'production') {
-    sessionConfig.store = MongoStore.create({
-        mongoUrl: process.env.DATABASE_URL,
-        touchAfter: 24 * 3600, // Update session only once in 24 hours unless session data changes
-        crypto: {
-            secret: process.env.SESSION_SECRET
-        },
-        collectionName: 'sessions',
-        ttl: 24 * 60 * 60 // 24 hours
-    });
-}
-
-app.use(session(sessionConfig));
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
